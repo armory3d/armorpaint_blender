@@ -20,8 +20,8 @@
 bl_info = {
     "name": "ArmorPaint Live-Link",
     "author": "PiloeGAO (Leo DEPOIX), Spirou4D, luboslenco",
-    "version": (0, 9, 0),
-    "blender": (3, 6, 0),
+    "version": (1, 0, 0),
+    "blender": (4, 5, 3),
     "location": "3D View > Side Bar",
     "description": "Integration of ArmorPaint into Blender",
     "warning": "Development",
@@ -32,8 +32,8 @@ bl_info = {
 import bpy, os, subprocess, platform, tempfile
 from bpy.types import (Operator,
                         Panel,
-                        AddonPreferences, 
-                        WindowManager, 
+                        AddonPreferences,
+                        WindowManager,
                         PropertyGroup)
 from bpy.props import *
 from bpy.utils import register_class, unregister_class
@@ -79,7 +79,7 @@ def generateMaterial(path):
     None,
     None,
     None]
-    
+
     """
     textures: list structure: - basecolor
     - subsurf
@@ -89,12 +89,12 @@ def generateMaterial(path):
     - opac
     - normalmap
     """
-    
+
     textures = searchTextures(path, textures)
-    
+
     if ('ArmorPaintMtl' in bpy.data.materials):
         reloadTextures()
-    else:        
+    else:
         # Create a new material
         material = bpy.data.materials.new(name="ArmorPaintMtl")
         material.use_nodes = True
@@ -106,42 +106,42 @@ def generateMaterial(path):
         diff_texture.name = "diffuse_texture"
         diff_texture.location = -460, 820.0
         if (textures[0] != None): diff_texture.image = bpy.data.images.load(filepath = textures[0])
-        
+
         subs_texture = material.node_tree.nodes.new('ShaderNodeTexImage')    #Add node for subsurface texture
         subs_texture.name = "subsurface_texture"
         subs_texture.location = -460, 540.0
         if (textures[1] != None): subs_texture.image = bpy.data.images.load(filepath = textures[1])
-        
+
         metallic_texture = material.node_tree.nodes.new('ShaderNodeTexImage')    #Add node for metallic texture
         metallic_texture.name = "metallic_texture"
         metallic_texture.location = -460, 260.0
         if (textures[2] != None): metallic_texture.image = bpy.data.images.load(filepath = textures[2])
-        
+
         roughness_texture = material.node_tree.nodes.new('ShaderNodeTexImage')    #Add node for roughness texture
         roughness_texture.name = "roughness_texture"
         roughness_texture.location = -460, -20.0
         if (textures[3] != None): roughness_texture.image = bpy.data.images.load(filepath = textures[3])
-        
+
         emission_texture = material.node_tree.nodes.new('ShaderNodeTexImage')    #Add node for emission texture
         emission_texture.name = "emission_texture"
         emission_texture.location = -460, -300.0
         if (textures[4] != None): emission_texture.image = bpy.data.images.load(filepath = textures[4])
-        
+
         opacity_texture = material.node_tree.nodes.new('ShaderNodeTexImage')    #Add node for opacity texture
         opacity_texture.name = "opacity_texture"
         opacity_texture.location = -460, -580.0
         if (textures[5] != None): opacity_texture.image = bpy.data.images.load(filepath = textures[5])
-        
+
         normal_texture = material.node_tree.nodes.new('ShaderNodeTexImage')    #Add node for normal texture
         normal_texture.name = "normal_texture"
         normal_texture.location = -460, -860.0
         if (textures[6] != None): normal_texture.image = bpy.data.images.load(filepath = textures[6])
-        
+
 
         normal_node = material.node_tree.nodes.new('ShaderNodeNormalMap')    #Add node for normals
         normal_node.location = -200.0, -860.0
-        
-        
+
+
         text_mapping_node = material.node_tree.nodes.new('ShaderNodeMapping')    #Add node for texture mapping
         text_mapping_node.location = -640.0, 200.0
         text_coord_node = material.node_tree.nodes.new('ShaderNodeTexCoord')    #Add node for texture coord
@@ -192,14 +192,14 @@ def generateMaterial(path):
 def update_filename(self, context):
     if not self["filename"].endswith(".arm") and self["filename"] != "":
         self["filename"] += ".arm"
-    
+
     objM = bpy.data.objects[context.active_object.name]
     if 'armorpaint_filename' in objM:
         if os.path.isfile(objM["armorpaint_proj_dir"] + SEP + self["filename"]):
             objM["armorpaint_filename"] = self["filename"]
         else:
             self["filename"] = "ERROR: File not found"
-    
+
 
 class ArmorPaintLiveLinkProperties(PropertyGroup):
 
@@ -209,23 +209,23 @@ class ArmorPaintLiveLinkProperties(PropertyGroup):
         default="//",
         maxlen=1024,
         subtype='DIR_PATH')
-    
+
     useCustomFilename : BoolProperty(
         name="Use custom filename",
         description="",
         default=False)
-    
-    filename : StringProperty(  
+
+    filename : StringProperty(
         name="ArmorPaint File name",
         description="File name",
         default="",
         update=update_filename)
-        
+
     useCustomTextureDir : BoolProperty(
         name="Use custom texture dir",
         description="",
         default=False)
-    
+
     texture_path : StringProperty(
         name="ArmorPaint Texture Directory",
         description="Texture directory",
@@ -258,7 +258,7 @@ class ArmorPaintLiveLinkAddonPreferences(AddonPreferences):
             layout.label(text="Please select this path: " +
             "\"ArmorPaint-Installation-Path/ArmorPaint.app/Contents/MacOS/\"")
         layout.prop(self, "path_exe")
-            
+
 # ------------------------------------------------------------------------------
 #    Addon Operators
 # ------------------------------------------------------------------------------
@@ -267,7 +267,7 @@ class ArmorPaintLivelinkOperator(Operator):
 
     bl_idname = "object.armorpaint_livelink"
     bl_label = "Export Selection to ArmorPaint"
-    
+
     @classmethod
     def poll(cls, context):
         return context.area.type == 'VIEW_3D'
@@ -277,13 +277,13 @@ class ArmorPaintLivelinkOperator(Operator):
         Prefs = context.preferences.addons[__name__].preferences
         path_exe = Prefs.path_exe
         path_dir = dirname(Prefs.path_exe)
-        
+
         typM = context.active_object.type
         objN = context.active_object.name
         objM = bpy.data.objects[objN]
-        
+
         projP = scn.armorpaint_properties.project_path
-        
+
 
 
         #ERRORS
@@ -299,7 +299,7 @@ class ArmorPaintLivelinkOperator(Operator):
         if bpy.data.filepath == "":
             self.report({'ERROR'}, "Save blend file first")
             return {'CANCELLED'}
-        
+
 
         if 'armorpaint_proj_dir' in objM and \
             os.path.isfile(objM["armorpaint_proj_dir"] + SEP + objM["armorpaint_filename"]):
@@ -310,36 +310,36 @@ class ArmorPaintLivelinkOperator(Operator):
         else:
             # Create a temporary file to store the .obj
             path_tmp = bpy.path.abspath(projP) + SEP + "tmp.obj"
-        
+
             # Export current object as obj and open it in armorpaint
             # Export the object as Obj and save it in the correct directory
-            bpy.ops.export_scene.obj(filepath=path_tmp,
-                                    check_existing=True,
-                                    axis_forward='-Z',
-                                    axis_up='Y',
-                                    filter_glob="*.obj;*.mtl",
-                                    use_selection=True,
-                                    use_animation=False,
-                                    use_mesh_modifiers=True,
-                                    use_edges=True,
-                                    use_smooth_groups=True,
-                                    use_smooth_groups_bitflags=False,
-                                    use_normals=True,
-                                    use_uvs=True,
-                                    use_materials=True,
-                                    use_triangles=False,
-                                    use_nurbs=False,
-                                    use_vertex_groups=False,
-                                    use_blen_objects=True,
-                                    group_by_object=False,
-                                    group_by_material=False,
-                                    keep_vertex_order=False,
-                                    global_scale=1,
-                                    path_mode='AUTO')
+            bpy.ops.wm.obj_export(
+                filepath=path_tmp,
+                check_existing=False,
+                export_selected_objects=True,
+                export_animation=False,
+                forward_axis='NEGATIVE_Z',
+                up_axis='Y',
+                global_scale=1.0,
+                apply_modifiers=True,
+                export_eval_mode='DAG_EVAL_VIEWPORT',
+                export_uv=True,
+                export_normals=True,
+                export_colors=True,
+                export_materials=False,
+                export_pbr_extensions=False,
+                path_mode='AUTO',
+                export_triangulated_mesh=True,
+                export_curves_as_nurbs=False,
+                export_smooth_groups=False,
+                export_vertex_groups=False,
+                export_object_groups=False,
+                export_material_groups=False
+            )
 
             #Launch ArmorPaint
             subprocess.Popen([path_exe,path_tmp])
-            
+
             objM["armorpaint_proj_dir"] = os.path.realpath(bpy.path.abspath(projP))
             objM["armorpaint_filename"] = str(objN) + ".arm"
 
@@ -349,7 +349,7 @@ class ArmorPaintLivelinkTexturesLoaderOperator(Operator):
 
     bl_idname = "object.armorpaint_livelink_textures_loader"
     bl_label = "ArmorPaint Live-Link - Load Textures"
-    
+
     @classmethod
     def poll(cls, context):
         return context.area.type == 'VIEW_3D'
@@ -381,18 +381,18 @@ class View3DPanel:
         return context.object is not None
 
 class ArmorPaintProjectFolder(View3DPanel, Panel):
-    
+
     bl_idname = "VIEW3D_PT_armorpaint"
     bl_label = "ArmorPaint Live-link"
-    
+
     def draw(self, context):
         scn = context.scene
 
         layout = self.layout
         col = layout.column(align=True)
         col.label(text="Project Directory :")
-        col.prop(scn.armorpaint_properties, 
-                "project_path", 
+        col.prop(scn.armorpaint_properties,
+                "project_path",
                 text="")
 
 class ArmorPaintOpenPanel(View3DPanel, Panel):
@@ -404,17 +404,17 @@ class ArmorPaintOpenPanel(View3DPanel, Panel):
         scn = context.scene
         typM = context.active_object.type
         useCF = scn.armorpaint_properties.useCustomFilename
-        
+
         layout = self.layout
         col = layout.split().column()
-        
+
         if typM == 'MESH':
-            col.prop(scn.armorpaint_properties, 
-                    "useCustomFilename", 
+            col.prop(scn.armorpaint_properties,
+                    "useCustomFilename",
                     text="Custom File Name")
             if(useCF):
-                col.prop(scn.armorpaint_properties, 
-                        "filename", 
+                col.prop(scn.armorpaint_properties,
+                        "filename",
                         text="")
             col.operator("object.armorpaint_livelink",
                         text="Open in ArmorPaint",
@@ -438,26 +438,26 @@ class ArmorPaintSyncTexturesPanel(View3DPanel, Panel):
 
         layout = self.layout
         col = layout.split().column()
-        
+
         if typM == 'MESH':
             if "armorpaint_proj_dir" in objM and \
                 os.path.isdir(objM["armorpaint_proj_dir"]):
-                
-                col.prop(scn.armorpaint_properties, 
-                        "useCustomTextureDir", 
+
+                col.prop(scn.armorpaint_properties,
+                        "useCustomTextureDir",
                         text="Custom Texture Directory")
-                
+
                 if(useCF):
-                    col.prop(scn.armorpaint_properties, 
-                            "texture_path", 
+                    col.prop(scn.armorpaint_properties,
+                            "texture_path",
                             text="Directory")
-                
+
                 if(useCF and os.path.isdir(texP)):
                     exportDir = texP
                 else:
                     exportDir = objM["armorpaint_proj_dir"] + SEP + "exports"
-                
-                if os.path.isdir(exportDir): 
+
+                if os.path.isdir(exportDir):
                     col.operator("object.armorpaint_livelink_textures_loader",
                                 text="Load textures",
                                 icon='SHADING_TEXTURE')
@@ -469,10 +469,10 @@ class ArmorPaintSyncTexturesPanel(View3DPanel, Panel):
                 col.label(text=ttmp)
                 ttmp = " before applying textures please!"
                 col.label(text=ttmp)
-        else: 
+        else:
             col.label(icon='CANCEL',
                     text="Only meshes support textures!")
-    
+
 
 # ------------------------------------------------------------------------------
 #    Addon Register
@@ -491,13 +491,13 @@ classes = (
 def register():
     for cls in classes:
         register_class(cls)
-    
+
     bpy.types.Scene.armorpaint_properties = PointerProperty(type=ArmorPaintLiveLinkProperties)
 
 def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
-    
+
     del bpy.types.Scene.armorpaint_properties
 
 
